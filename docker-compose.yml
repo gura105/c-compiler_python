@@ -1,0 +1,14 @@
+version: "3"
+services:
+  create_compiler_in_python:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        WORKDIR: /project
+    volumes:
+      - .:/project
+      - ${USERPROFILE-~}/.ssh:/home/vscode/.ssh
+    image: create_compiler_in_python-image
+    container_name: create_compiler_in_python-container
+    tty: true
