@@ -4,7 +4,7 @@ assert()
     expected="$1"
     input="$2"
 
-    python main.py "$input" > tmp.s
+    ./main.py "$input" > tmp.s
     cc -o tmp tmp.s
     ./tmp
     actual="$?"
