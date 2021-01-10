@@ -92,6 +92,38 @@ class TestTokenizer(TestCase):
             token = token.next
             expected_token = expected_token.next
 
+    def test_read_local_var(self):
+
+        test_string = "a + b / c * d >= Loc4al * _Var2 + 2; "
+
+        token_list = [
+            Token(TokenKind.IDENTIFIER, "a"),
+            Token(TokenKind.SYMBOL, "+"),
+            Token(TokenKind.IDENTIFIER, "b"),
+            Token(TokenKind.SYMBOL, "/"),
+            Token(TokenKind.IDENTIFIER, "c"),
+            Token(TokenKind.SYMBOL, "*"),
+            Token(TokenKind.IDENTIFIER, "d"),
+            Token(TokenKind.SYMBOL, ">="),
+            Token(TokenKind.IDENTIFIER, "Loc4al"),
+            Token(TokenKind.SYMBOL, "*"),
+            Token(TokenKind.IDENTIFIER, "_Var2"),
+            Token(TokenKind.SYMBOL, "+"),
+            Token(TokenKind.NUMBER, "2"),
+            Token(TokenKind.SYMBOL, ";"),
+            Token(TokenKind.EOF),
+        ]
+
+        reduce(linked_list_helper, token_list)
+        expected_token = token_list[0]
+
+        token = tokenize(test_string)
+
+        while token:
+            assert str(token) == str(expected_token)
+            token = token.next
+            expected_token = expected_token.next
+
 
 class TestTokenOperator(TestCase):
     def setUp(self):

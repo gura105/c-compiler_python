@@ -28,9 +28,7 @@ class Token:
 
     def __repr__(self) -> str:
         """理解しやすい形で標準出力する"""
-        return (
-            f"Token(type={self.type}, value={self.value}, is_next={isinstance(self.next, Token)})"
-        )
+        return f"Token(type={str(TokenKind(self.type))}, value={self.value}, is_next={isinstance(self.next, Token)})"
 
 
 class TokenOperator:
@@ -124,7 +122,8 @@ def tokenize(input_str: str) -> Union[Token, None]:
             i += 1
             continue
 
-        if re_obj := re.match("[a-z]", input_str[i:]):
+        # ローカル変数名を取得する
+        if re_obj := re.match("([a-zA-Z_][0-9a-zA-Z_]*)", input_str[i:]):
             value = re_obj.group()
             cursor.next = Token(token_type=TokenKind.IDENTIFIER, value=value)
 
