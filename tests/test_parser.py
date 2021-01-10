@@ -4,8 +4,8 @@ Tokenizerのテスト
 
 from functools import reduce
 from unittest import TestCase
-from cc9.tokenizer import TokenOperator, Token, TokenKind
-from cc9.parser import Node, Parser
+from tokenizer import TokenOperator, Token, TokenKind
+from token_parser import Node, Parser
 from typing import Union
 
 

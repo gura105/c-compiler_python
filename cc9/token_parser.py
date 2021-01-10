@@ -41,10 +41,58 @@ class Node:
     def __repr__(self) -> str:
         """文字列型表示を定義"""
         return f"""
-        Node(value={self.value}, kind={str(NodeKind(self.kind))},
-        left_hand_exist={getattr(self.left_hand, "value", None)},
+        Node(value={self.value}, kind={str(NodeKind(self.kind))}, offset={self.offset},
+        left_hand={getattr(self.left_hand, "value", None)},
         right_hand={getattr(self.right_hand, "value", None)})
         """
+
+
+class LocalVariable:
+    """ローカル変数を表すクラス"""
+
+    def __init__(self, name: Union[str, None] = None, offset: Union[int, None] = None):
+        self.next: Union[LocalVariable, None] = None
+        self.name = name
+        self.offset = offset
+
+
+class LocalVariableOperator:
+    """LocalVariableを操作するクラス"""
+
+    def __init__(self):
+        self.head = LocalVariable()
+        self.cursor = self.head.next
+
+    def get_offset(self) -> int:
+        """現在指しているカーソルノードのoffsetを取得する"""
+        try:
+            return self.cursor.offset
+        except AttributeError:
+            raise AttributeError("連結リストにノードが存在しません")
+
+    def proceed_pointer(self) -> None:
+        """ポインターを一つ進める"""
+        try:
+            next_node = self.cursor.next
+            if next_node is None:
+                raise AttributeError("ポインターが指すノードの次のノードがありません")
+            self.cursor = next_node
+        except AttributeError:
+            raise AttributeError("連結リストにノードが1つも存在していません")
+
+    def find(self, value: str) -> LocalVariable:
+        """
+        valueの値をもつLocalVariableオブジェクトが存在するか確認する
+
+        存在しない場合はエラーを起こす
+        """
+        pointer = self.head.next
+        while pointer:
+            if pointer.name == value:
+                return pointer
+            pointer = pointer.next
+
+        raise LookupError(f"{value}はローカル変数としてアサインされていません")
 
 
 class Parser:
@@ -53,13 +101,14 @@ class Parser:
     def __init__(self, cursor: TokenOperator) -> None:
         """カーソルを設定する"""
         self.cursor = cursor
+        self.local_var_cursor = LocalVariableOperator()
 
     def create_new_node(
         self,
         value: Union[str, int, None],
         kind: NodeKind,
-        left_hand: Union[Node, None],
-        right_hand: Union[Node, None],
+        left_hand: Union[Node, None] = None,
+        right_hand: Union[Node, None] = None,
     ) -> Node:
         """新たノードを作成する"""
         node = Node()
@@ -67,6 +116,30 @@ class Parser:
         node.kind = kind
         node.right_hand = right_hand
         node.left_hand = left_hand
+        return node
+
+    def create_new_local_var_node(self, name: str):
+        """
+        ローカル変数ノードを抽象構文木に追加する
+
+        副作用としてローカル変数ノードの操作も行う
+        """
+        try:
+            target_local_var_node = self.local_var_cursor.find(name)
+            target_offset = target_local_var_node.offset
+        except LookupError:
+            if self.local_var_cursor.cursor is None:
+                target_offset = 8
+                self.local_var_cursor.head.next = LocalVariable(name=name, offset=target_offset)
+                self.local_var_cursor.cursor = self.local_var_cursor.head.next
+            else:
+                target_offset = self.local_var_cursor.get_offset() + 8
+                self.local_var_cursor.cursor.next = LocalVariable(name=name, offset=target_offset)
+                self.local_var_cursor.proceed_pointer()
+
+        node = self.create_new_node(value=name, kind=NodeKind.LOCAL_VAR)
+        node.offset = target_offset
+
         return node
 
     def run(self) -> List[Node]:
@@ -224,8 +297,7 @@ class Parser:
             value = cursor.get_value()
             cursor.proceed_cursor()
 
-            new_node = self.create_new_node(value, NodeKind.LOCAL_VAR, None, None)
-            new_node.offset = (ord(value) - ord("a") + 1) * 8
+            new_node = self.create_new_local_var_node(value)
             return new_node
 
         if cursor.chack_type(TokenKind.NUMBER) is False:
